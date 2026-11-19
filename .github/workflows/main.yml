@@ -1,4 +1,4 @@
-name: Build Pure Go Single EXE
+name: Build Single File RailSaathi EXE
 
 on:
   workflow_dispatch:
@@ -7,34 +7,65 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-
-      - name: Create Go WebView App
+      - name: Create WinForms WebView2 App
+        shell: pwsh
         run: |
-          go mod init railsaathi
-          go get ://github.com
-          Set-Content -Path "main.go" -Value '
-          package main
+          dotnet new winforms -n RailSaathi -o app --no-restore
+          Set-Content -Path "app/RailSaathi.csproj" -Value @'
+          <Project Sdk="Microsoft.NET.Sdk">
+            <PropertyGroup>
+              <OutputType>WinExe</OutputType>
+              <TargetFramework>net8.0-windows</TargetFramework>
+              <UseWindowsForms>true</UseWindowsForms>
+              <PublishSingleFile>true</PublishSingleFile>
+              <SelfContained>true</SelfContained>
+              <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+              <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+            </PropertyGroup>
+            <ItemGroup>
+              <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
+            </ItemGroup>
+          </Project>
+          '@
 
-          import "://github.com"
+          Set-Content -Path "app/Program.cs" -Value @'
+          using System;
+          using System.Windows.Forms;
+          using Microsoft.Web.WebView2.WinForms;
 
-          func main() {
-              w := webview.New(false)
-              defer w.Destroy()
-              w.SetTitle("RailSaathi")
-              w.SetSize(1200, 800, webview.HintNone)
-              w.Navigate("https://railsaathi.isroot.in")
-              w.Run()
-          }'
+          namespace RailSaathi
+          {
+              internal static class Program
+              {
+                  [STAThread]
+                  static void Main()
+                  {
+                      ApplicationConfiguration.Initialize();
+                      var form = new Form
+                      {
+                          Text = "RailSaathi",
+                          Width = 1200,
+                          Height = 800,
+                          StartPosition = FormStartPosition.CenterScreen
+                      };
+                      var webView = new WebView2
+                      {
+                          Dock = DockStyle.Fill,
+                          Source = new Uri("https://railsaathi.isroot.in")
+                      };
+                      form.Controls.Add(webView);
+                      Application.Run(form);
+                  }
+              }
+          }
+          '@
 
-      - name: Build Single EXE (No Console Window)
-        run: go build -ldflags="-H windowsgui -s -w" -o RailSaathi.exe .
+      - name: Publish Single EXE
+        shell: pwsh
+        run: dotnet publish app/RailSaathi.csproj -c Release -r win-x64 -o output
 
       - name: Upload Single EXE
         uses: actions/upload-artifact@v4
         with:
           name: RailSaathi-Single-EXE
-          path: RailSaathi.exe
+          path: output/RailSaathi.exe
