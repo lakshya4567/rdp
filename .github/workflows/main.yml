@@ -16,7 +16,7 @@ jobs:
         run: npm install -g nativefier
 
       - name: Build App Folder
-        run: nativefier --name "RailSaathi" --platform windows --arch x64 --single-instance "https://isroot.in"
+        run: nativefier --name "RailSaathi" --platform windows --arch x64 --single-instance "https://railsaathi.isroot.in"
 
       - name: Create 7-Zip SFX Config
         run: |
