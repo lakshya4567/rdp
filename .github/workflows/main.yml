@@ -1,0 +1,33 @@
+name: Build Single Portable RailSaathi EXE
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Nativefier
+        run: npm install -g nativefier
+
+      - name: Build App Folder
+        run: nativefier --name "RailSaathi" --platform windows --arch x64 --single-instance "https://railsaathi.isroot.in"
+
+      - name: Download Warp Packer
+        run: |
+          Invoke-WebRequest -Uri "https://github.com" -OutFile "warp-packer.exe"
+
+      - name: Bundle into Single EXE
+        run: |
+          .\warp-packer.exe --arch windows-x64 --input_dir "RailSaathi-win32-x64" --exec "RailSaathi.exe" --output "RailSaathi-Portable.exe"
+
+      - name: Upload Single EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: RailSaathi-Portable-EXE
+          path: RailSaathi-Portable.exe
