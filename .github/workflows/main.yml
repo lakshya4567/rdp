@@ -10,13 +10,15 @@ jobs:
       - name: Create WinForms WebView2 App
         shell: pwsh
         run: |
-          dotnet new winforms -n RailSaathi -o app --no-restore
+          New-Item -ItemType Directory -Force -Path "app" | Out-Null
+
           Set-Content -Path "app/RailSaathi.csproj" -Value @'
           <Project Sdk="Microsoft.NET.Sdk">
             <PropertyGroup>
               <OutputType>WinExe</OutputType>
               <TargetFramework>net8.0-windows</TargetFramework>
               <UseWindowsForms>true</UseWindowsForms>
+              <ImplicitUsings>enable</ImplicitUsings>
               <PublishSingleFile>true</PublishSingleFile>
               <SelfContained>true</SelfContained>
               <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -40,7 +42,8 @@ jobs:
                   [STAThread]
                   static void Main()
                   {
-                      ApplicationConfiguration.Initialize();
+                      Application.EnableVisualStyles();
+                      Application.SetCompatibleTextRenderingDefault(false);
                       var form = new Form
                       {
                           Text = "RailSaathi",
