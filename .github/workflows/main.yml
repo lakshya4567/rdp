@@ -16,15 +16,20 @@ jobs:
         run: npm install -g nativefier
 
       - name: Build App Folder
-        run: nativefier --name "RailSaathi" --platform windows --arch x64 --single-instance "https://railsaathi.isroot.in"
+        run: nativefier --name "RailSaathi" --platform windows --arch x64 --single-instance "https://isroot.in"
 
-      - name: Download Warp Packer
+      - name: Create 7-Zip SFX Config
         run: |
-          Invoke-WebRequest -Uri "https://github.com" -OutFile "warp-packer.exe"
+          Set-Content -Path "config.txt" -Value ';!@Install@!UTF-8!
+          RunProgram="RailSaathi.exe"
+          ;!@InstallEnd@!' -Encoding UTF8
 
-      - name: Bundle into Single EXE
+      - name: Pack into Single Portable EXE
         run: |
-          .\warp-packer.exe --arch windows-x64 --input_dir "RailSaathi-win32-x64" --exec "RailSaathi.exe" --output "RailSaathi-Portable.exe"
+          cd RailSaathi-win32-x64
+          7z a -mx=5 ..\app.7z *
+          cd ..
+          cmd /c copy /b "C:\Program Files\7-Zip\7z.sfx" + config.txt + app.7z RailSaathi-Portable.exe
 
       - name: Upload Single EXE
         uses: actions/upload-artifact@v4
