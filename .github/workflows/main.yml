@@ -1,4 +1,4 @@
-name: Build Single Portable RailSaathi EXE
+name: Build Pure Go Single EXE
 
 on:
   workflow_dispatch:
@@ -7,32 +7,34 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          node-version: '20'
+          go-version: '1.22'
 
-      - name: Install Nativefier
-        run: npm install -g nativefier
-
-      - name: Build App Folder
-        run: nativefier --name "RailSaathi" --platform windows --arch x64 --single-instance "https://railsaathi.isroot.in"
-
-      - name: Create 7-Zip SFX Config
+      - name: Create Go WebView App
         run: |
-          Set-Content -Path "config.txt" -Value ';!@Install@!UTF-8!
-          RunProgram="RailSaathi.exe"
-          ;!@InstallEnd@!' -Encoding UTF8
+          go mod init railsaathi
+          go get ://github.com
+          Set-Content -Path "main.go" -Value '
+          package main
 
-      - name: Pack into Single Portable EXE
-        run: |
-          cd RailSaathi-win32-x64
-          7z a -mx=5 ..\app.7z *
-          cd ..
-          cmd /c copy /b "C:\Program Files\7-Zip\7z.sfx" + config.txt + app.7z RailSaathi-Portable.exe
+          import "://github.com"
+
+          func main() {
+              w := webview.New(false)
+              defer w.Destroy()
+              w.SetTitle("RailSaathi")
+              w.SetSize(1200, 800, webview.HintNone)
+              w.Navigate("https://railsaathi.isroot.in")
+              w.Run()
+          }'
+
+      - name: Build Single EXE (No Console Window)
+        run: go build -ldflags="-H windowsgui -s -w" -o RailSaathi.exe .
 
       - name: Upload Single EXE
         uses: actions/upload-artifact@v4
         with:
-          name: RailSaathi-Portable-EXE
-          path: RailSaathi-Portable.exe
+          name: RailSaathi-Single-EXE
+          path: RailSaathi.exe
